@@ -1,287 +1,342 @@
-# AWS Project 1 : Deploying a 2-Tier Application in Private Subnets on AWS
+# AWS Project 1 : Deploying a 2-Tier Application Architecture in Private Subnets on AWS
 
-Modern cloud applications are designed with security, scalability, and isolation in mind. One of the most common architecture patterns used in AWS is the **2-tier architecture**, where the frontend application layer is separated from the backend database layer.
+One of the most important concepts in cloud architecture is learning how to securely separate application components using public and private subnets.
 
-In this project, I’ll walk you through deploying a simple 2-tier application on AWS using:
+In this project, I built and deployed a simple 2-tier architecture on AWS where:
 
-1.  A **Web/Application Server** running inside a public subnet
-2.  A **Database Server** running securely inside a private subnet
+1. The frontend/web server is deployed in a public subnet and accessible from the internet.
+2. The backend database server is deployed securely inside a private subnet with no direct internet access.
 
-This setup ensures that:
-- Users can access the application publicly
-- The database remains protected from direct internet access
-- Only the application server can communicate with the database
-
-By the end of this project, you’ll understand:
-- Public vs Private Subnets
-- VPC networking
+The goal of this project was to understand:
+- AWS VPC networking
+- Public vs Private subnets
 - Route tables
 - Internet Gateway
 - Security Groups
 - Secure communication between application layers
 
-Prerequisites
--------------
+This project helped me understand how real-world production architectures are designed to improve both security and scalability.
 
-To follow along, you only need:
+---
 
-*   An AWS account
-*   Basic understanding of EC2 and VPC
-*   SSH key pair for EC2 access
-*   A simple web application (HTML/PHP/Node.js/Python)
+# Project Architecture
 
-For this project, we’ll use:
-- Ubuntu EC2 instances
-- MySQL database
-- Custom VPC networking
+```text
+User
+  ↓
+Internet Gateway
+  ↓
+Public Subnet
+  ↓
+EC2 Web Server
+  ↓
+Private Subnet
+  ↓
+MySQL Database Server
+```
 
-Step 1: Create a Custom VPC
----------------------------
+---
 
-We’ll start by creating our own Virtual Private Cloud (VPC).
+# Prerequisites
 
-Navigate to:
-**AWS Console → VPC → Create VPC**
+To follow along with this project, you only need:
 
-For this project, I’ll be using:
+- An AWS account
+- Basic understanding of EC2 and VPC
+- SSH key pair
+- Ubuntu EC2 AMI
+- MySQL installed on the database server
 
-*   **VPC Name**: two-tier-vpc
-*   **IPv4 CIDR Block**: 10.0.0.0/16
+---
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*B6nX2mB7R7FvO8T1g1fQWA.png)
+# AWS Services Used
 
-Once created, this VPC will act as the isolated network for our application.
+For this project, I made use of the following AWS services:
 
-Step 2: Create Public and Private Subnets
------------------------------------------
+- Amazon VPC
+- EC2
+- Internet Gateway
+- Route Tables
+- Public & Private Subnets
+- Security Groups
+- MySQL Database
+- NAT Gateway *(Optional)*
 
-Inside the VPC, we’ll create two subnets:
+---
 
-1.  Public Subnet → for the Web Server
-2.  Private Subnet → for the Database
+# Step 1: Create a Custom VPC
 
-Navigate to:
-**VPC → Subnets → Create subnet**
+I started by creating a custom VPC from the AWS console.
 
-### Public Subnet
+For this setup, I used:
 
-*   **Subnet Name**: public-subnet
-*   **Availability Zone**: us-east-1a
-*   **CIDR Block**: 10.0.1.0/24
+```bash
+10.0.0.0/16
+```
 
-Enable:
-- Auto-assign public IPv4 address
+This CIDR block provides enough private IP addresses for the resources inside the VPC.
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*9Wb5M4M8vJjY5k7a2yX5ZA.png)
+From the AWS console:
 
-### Private Subnet
+- Navigate to **VPC Dashboard**
+- Select **Create VPC**
+- Add VPC name and CIDR block
 
-*   **Subnet Name**: private-subnet
-*   **Availability Zone**: us-east-1a
-*   **CIDR Block**: 10.0.2.0/24
+Once completed, the VPC becomes the isolated network environment for the project.
 
-Do NOT enable public IP assignment.
+---
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*8R6vJ0vB8g8r2mY9g2kV5w.png)
+# Step 2: Create Public and Private Subnets
 
-Step 3: Create and Attach Internet Gateway
-------------------------------------------
+Next, I created two subnets inside the VPC.
 
-To allow internet access for resources in the public subnet, we need an Internet Gateway.
+## Public Subnet
 
-Navigate to:
-**VPC → Internet Gateways → Create internet gateway**
+The public subnet hosts the web/application server.
 
-*   **Name**: two-tier-igw
+Example CIDR:
 
-After creation:
-- Attach it to the VPC
+```bash
+10.0.1.0/24
+```
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*P3mY8nK8q5mR4oW7f6vV8A.png)
+This subnet allows internet access through an Internet Gateway.
 
-Step 4: Configure Route Tables
-------------------------------
+---
 
-Route tables determine how traffic flows within the VPC.
+## Private Subnet
 
-### Public Route Table
+The private subnet hosts the database server.
 
-Navigate to:
-**VPC → Route Tables → Create route table**
+Example CIDR:
 
-*   **Name**: public-route-table
+```bash
+10.0.2.0/24
+```
 
-Add route:
+Resources in this subnet are not directly accessible from the internet.
+
+This improves security by isolating sensitive backend services.
+
+---
+
+# Step 3: Setup Internet Gateway
+
+To allow internet access for the public subnet, I created and attached an Internet Gateway to the VPC.
+
+From the VPC dashboard:
+
+- Create Internet Gateway
+- Attach it to the custom VPC
+
+This enables incoming and outgoing internet traffic for public resources.
+
+---
+
+# Step 4: Configure Route Tables
+
+Next, I configured routing inside the VPC.
+
+## Public Route Table
+
+I added the following route:
 
 ```text
 0.0.0.0/0 → Internet Gateway
 ```
 
-Associate:
-- Public subnet
+and associated it with the public subnet.
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*L6xQ8wB9sR5vA2nJ7gW3LA.png)
+This allows the web server to communicate with the internet.
 
-### Private Route Table
+---
 
-Create another route table:
+## Private Route Table
 
-*   **Name**: private-route-table
+The private subnet route table only allows internal VPC communication.
 
-Associate:
-- Private subnet
+This prevents direct public internet access to the database server.
 
-No internet route is required.
+---
 
-Step 5: Create Security Groups
-------------------------------
+# Step 5: Launch the Web Server (Public Subnet)
 
-We’ll create separate security groups for:
-- Web Server
-- Database Server
+Next, I launched an Ubuntu EC2 instance inside the public subnet.
 
-### Web Server Security Group
+For the setup, I used:
 
-Allow inbound:
+- AMI: Ubuntu
+- Instance type: t2.micro
+
+I also configured a security group allowing:
+
 - SSH (22)
 - HTTP (80)
 
-Source:
-```text
-0.0.0.0/0
-```
-
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*4kL9Y3M7rQ5bP2xN7sF5WA.png)
-
-### Database Security Group
-
-Allow inbound:
-- MySQL/Aurora (3306)
-
-Source:
-- Web Server Security Group only
-
-This ensures only the application server can access the database.
-
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*2fQ7L5wB6sM8nJ4xV3zP7A.png)
-
-Step 6: Launch the Web Server EC2 Instance
-------------------------------------------
-
-Navigate to:
-**EC2 → Launch Instance**
-
-For this project, I’ll be using:
-
-*   **AMI**: Ubuntu 24.04
-*   **Instance type**: t2.micro
-*   **Subnet**: public-subnet
-*   **Security Group**: web-server-sg
-
-Enable:
-- Auto-assign public IP
-
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*7Wg4N8mJ6xQ2P5vK9yF2ZA.png)
-
-Once launched, connect via SSH:
-
-```bash
-ssh -i key.pem ubuntu@public-ip
-```
-
-Install Nginx:
+After connecting to the server via SSH, I installed Nginx:
 
 ```bash
 sudo apt update
 sudo apt install nginx -y
 ```
 
-Verify installation:
+Then I started the service:
 
 ```bash
-http://<public-ip>
+sudo systemctl start nginx
+sudo systemctl enable nginx
 ```
 
-You should see the default Nginx page.
+To test the setup, I visited the public IPv4 address of the EC2 instance and confirmed the Nginx default page was accessible.
 
-Step 7: Launch the Database Server
-----------------------------------
+---
 
-For the database layer, we’ll launch an EC2 instance inside the private subnet.
+# Step 6: Launch the Database Server (Private Subnet)
 
-Navigate to:
-**EC2 → Launch Instance**
+Next, I launched another EC2 instance inside the private subnet.
 
-Use:
-*   **AMI**: Ubuntu 24.04
-*   **Subnet**: private-subnet
-*   **Security Group**: database-sg
+This instance acts as the backend database server.
 
-Do NOT assign a public IP.
+For security purposes:
+- No public IP address was assigned
+- SSH access was restricted
+- Only the web server could communicate with it
 
-![captionless image](https://miro.medium.com/v2/resize:fit:1400/1*8gQ6M4xB7sW5N2vJ3kL8PA.png)
-
-Install MySQL:
+I installed MySQL on the private instance:
 
 ```bash
 sudo apt update
 sudo apt install mysql-server -y
 ```
 
-Allow remote MySQL connections from the web server.
+---
 
-Step 8: Connect Web Server to Database
---------------------------------------
+# Step 7: Configure Security Groups
 
-From the web server, test connectivity to the database server:
+One of the most important parts of this project was properly configuring security groups.
 
-```bash
-mysql -h <private-ip> -u root -p
-```
+## Web Server Security Group
 
-If configured correctly:
-- The web server should successfully connect
-- External users should NOT access the database directly
+Allowed:
+- HTTP (80)
+- SSH (22)
 
-This demonstrates proper private subnet isolation.
+From:
+- Anywhere (`0.0.0.0/0`)
 
-Step 9: Test the Application
-----------------------------
+---
 
-Deploy a simple application on the web server that interacts with the database.
+## Database Security Group
 
-Example:
-- PHP app
-- Node.js app
-- Python Flask app
+Allowed:
+- MySQL (3306)
 
-Workflow:
+From:
+- Web Server Security Group only
 
-```text
-User
- ↓
-Web Server (Public Subnet)
- ↓
-Database Server (Private Subnet)
-```
+This ensures the database server only accepts traffic from the application server and not directly from the internet.
 
-The application should:
-- Receive user requests
-- Query the database
-- Return responses securely
+---
 
-Conclusion
-----------
+# Step 8: Test Application Connectivity
 
-This hands-on project demonstrated how to build a secure 2-tier application architecture on AWS using public and private subnets.
+After configuring both servers, I tested communication between them.
 
-With this setup:
+The application server successfully connected to the MySQL database running inside the private subnet.
 
-*   The web server is publicly accessible
-*   The database remains isolated and secure
-*   Communication between layers is tightly controlled using security groups and subnet routing
+This confirmed:
+- Route tables were correctly configured
+- Security groups were working properly
+- Private subnet isolation was successful
 
-This architecture pattern is commonly used in:
-- Web applications
-- Internal business systems
-- Production cloud environments
+---
+
+# Security Benefits of This Architecture
+
+This setup follows a common real-world cloud security practice.
+
+## Database Isolation
+
+The database is hidden from the public internet.
+
+---
+
+## Controlled Communication
+
+Only the application server can communicate with the database server.
+
+---
+
+## Reduced Attack Surface
+
+Sensitive backend resources remain protected inside private subnets.
+
+---
+
+# Optional Improvements
+
+While this project focuses on the core 2-tier architecture, additional services can improve scalability and availability.
+
+## Application Load Balancer (ALB)
+
+Distribute traffic across multiple web servers.
+
+---
+
+## Auto Scaling Group (ASG)
+
+Automatically scale EC2 instances during high traffic.
+
+---
+
+## NAT Gateway
+
+Allow private subnet resources to access the internet securely for updates.
+
+---
+
+## RDS Instead of Self-Managed MySQL
+
+Use Amazon RDS for managed database operations.
+
+---
+
+# Challenges I Faced
+
+Some of the issues I encountered during this project included:
+
+- Incorrect route table associations
+- Security group misconfigurations
+- Database connectivity troubleshooting
+- SSH access issues
+
+Troubleshooting these problems helped me better understand AWS networking and cloud security concepts.
+
+---
+
+# Key Learnings
+
+Through this project, I learned:
+
+- How VPC networking works
+- Difference between public and private subnets
+- Importance of route tables and gateways
+- Security group configuration
+- Secure cloud architecture design
+- How real-world applications isolate backend services
+
+---
+
+# Conclusion
+
+This project helped me gain practical experience designing and deploying secure cloud infrastructure on AWS.
+
+By implementing a 2-tier architecture with private subnets, I learned how production environments separate frontend and backend resources to improve security, scalability, and reliability.
+
+This project strengthened my understanding of:
+- AWS Networking
+- VPC Architecture
+- Cloud Security
+- Infrastructure Design
+
+and gave me hands-on exposure to building secure cloud environments similar to real-world enterprise deployments.
