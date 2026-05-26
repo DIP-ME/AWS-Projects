@@ -24,8 +24,7 @@ For example:
 
 IAM helps enforce the principle of **least privilege**, meaning users only get the permissions they absolutely need.
 
-![image](https://miro.medium.com/v2/resize:fit:1400/1*P0Fjz7eYJ6M8Yzqg5V9I6A.png)
-
+![image](IAM.jpg)
 By default, the AWS root account has complete access to all AWS services and resources. However, AWS strongly recommends avoiding the use of the root account for daily tasks and instead creating IAM users with limited permissions.
 
 ---
