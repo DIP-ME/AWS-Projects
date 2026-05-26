@@ -20,7 +20,7 @@ Think of them like this:
 
 Understanding when to use each storage service is an important skill in cloud engineering and architecture design.
 
-![image](https://miro.medium.com/v2/resize:fit:1400/1*O5x0O3xv4Q0JjT9fYfJ9gA.png)
+![image](usecase.png)
 
 ---
 
