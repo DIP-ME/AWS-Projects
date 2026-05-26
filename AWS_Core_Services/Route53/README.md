@@ -20,7 +20,7 @@ It can:
 - Perform health checks
 - Automatically redirect traffic if an application becomes unhealthy
 
-![image](https://miro.medium.com/v2/resize:fit:1400/1*AXi4M4a7vT4bQ6T5k7G7nA.png)
+![image](Route.png)
 
 By using Route 53, you can make your applications accessible globally with reliable DNS routing and traffic management features.
 
