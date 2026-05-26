@@ -1,4 +1,4 @@
-# AWS Project: Deploying a 2-Tier Application in Private Subnets on AWS
+# AWS Project 1 : Deploying a 2-Tier Application in Private Subnets on AWS
 
 Modern cloud applications are designed with security, scalability, and isolation in mind. One of the most common architecture patterns used in AWS is the **2-tier architecture**, where the frontend application layer is separated from the backend database layer.
 
