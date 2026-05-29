@@ -52,8 +52,8 @@ Each project includes:
 ```text
 AWS-Projects/
 │
-├── EC2-Projects/
-├── S3-Projects/
+├── Project-1/EC2-MysqlDB-2 Tier
+├── S3-Projects/ALB-EC@-S3-3 Tier
 ├── VPC-Networking/
 ├── IAM-Security/
 ├── Load-Balancing-ASG/
