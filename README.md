@@ -49,7 +49,7 @@ Each project includes:
 
 # 📂 Repository Structure
 
-
+```text
 AWS-Projects/
 │
 ├── EC2-Projects/
@@ -63,3 +63,4 @@ AWS-Projects/
 ├── Terraform-Projects/
 │
 └── README.md
+```
